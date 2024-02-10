@@ -1,0 +1,160 @@
+<!DOCTYPE html>  
+<html>  
+<head>  
+    <title>Your Map</title>  
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>  
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>  
+    
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-JcKb8q3iqJ61gNV9KGb8thSsNjpSL0n8PARn9HuZOnIxN0hoP+VmmDGMN5t9UJ0Z" crossorigin="anonymous">  
+    <link href="path-to-your-sb-admin-2.min.css" rel="stylesheet">  
+  
+    <style>  
+        /* Set the height of the map to 50% of the viewport height */  
+        #mapid { height: 70vh; }  
+
+        /* table, th, td {
+            border: 1px solid black;
+            border-collapse: collapse;
+            padding: 5px;
+            text-align: left;
+        } */
+
+    </style>  
+</head>  
+<body>  
+<div id="mapid"></div>  
+<!-- Add a search bar -->  
+<input type="text" id="search" placeholder="Search...">  
+<!-- Add a table to display the data -->  
+<table>  
+    <thead>  
+        <tr>  
+            <th>ID</th>  
+            <th>Name</th>  
+            <th>Latitude</th>  
+            <th>Longitude</th>  
+            <th>Painkillers</th>  
+            <th>Bandages</th>  
+            <th>Oxygen</th>  
+        </tr>  
+    </thead>  
+    <tbody>  
+        {% for item in data %}  
+            <tr>  
+                <td>{{item[0]}}</td>  
+                <td>{{item[1]}}</td>  
+                <td>{{item[2]}}</td>  
+                <td>{{item[3]}}</td>  
+                <td>{{item[4]}}</td>  
+                <td>{{item[5]}}</td>  
+                <td>{{item[6]}}</td>  
+            </tr>  
+        {% endfor %}  
+    </tbody>  
+</table>
+<script>  
+    var map = L.map('mapid').setView([31.3406, 34.3083], 13);  
+  
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {  
+        maxZoom: 19,  
+    }).addTo(map);  
+
+    var greenIcon = L.icon({
+            iconUrl: 'https://upload.wikimedia.org/wikipedia/commons/f/fb/Map_pin_icon_green.svg',
+            iconSize: [30, 30], // Adjust as needed
+            iconAnchor: [15, 30], // Adjust as needed
+            popupAnchor: [0, -30] // Adjust as needed
+        });
+    
+    var yellowIcon = L.icon({
+            iconUrl: 'https://upload.wikimedia.org/wikipedia/commons/9/90/Icone_Amarelo.svg',
+            iconSize: [30, 30], // Adjust as needed
+            iconAnchor: [15, 30], // Adjust as needed
+            popupAnchor: [0, -30] // Adjust as needed
+    });
+
+    var redIcon = L.icon({
+            iconUrl: 'https://upload.wikimedia.org/wikipedia/commons/e/ed/Map_pin_icon.svg',
+            iconSize: [30, 30], // Adjust as needed
+            iconAnchor: [15, 30], // Adjust as needed
+            popupAnchor: [0, -30] // Adjust as needed
+    });
+
+
+
+    {% for item in data %} 
+        {% if item[8] == 'r' %}
+            var marker = L.marker([{{item[2]}}, {{item[3]}}], { icon: redIcon }).addTo(map);  
+            marker.bindPopup("<b>{{item[1]}}</b> <br /> Population: {{ item[7]}}").openPopup();  
+        {% elif item[8] == 'y' %}
+            var marker = L.marker([{{item[2]}}, {{item[3]}}], { icon: yellowIcon }).addTo(map);  
+            marker.bindPopup("<b>{{item[1]}}</b>  <br /> Population {{ item[7]}} ").openPopup();  
+        {% else %}
+            var marker = L.marker([{{item[2]}}, {{item[3]}}], { icon: greenIcon }).addTo(map);  
+            marker.bindPopup("<b>{{item[1]}}</b> <br /> Population: {{ item[7]}}").openPopup();  
+        {% endif %}
+
+        // Add an event listener to the marker  
+        marker.on('click', function() {  
+            // Perform a search with the name of the clicked marker  
+            var searchQuery = "{{item[1]}}";  
+    
+            fetch('/search?query=' + searchQuery)  
+                .then(response => response.json())  
+                .then(data => {  
+                    // Clear the table  
+                    var table = document.querySelector('tbody');  
+                    table.innerHTML = '';  
+    
+                    // Add new rows to the table  
+                    data.forEach(item => {  
+                        var row = document.createElement('tr');  
+    
+                        // Add each item property as a new cell  
+                        for (var i = 0; i < 7; i++) {  
+                            var cell = document.createElement('td');  
+                            cell.textContent = item[i];  
+                            row.appendChild(cell);  
+                        }  
+    
+                        table.appendChild(row);  
+                    });  
+                });  
+        });
+          
+    {% endfor %}
+
+</script>  
+<script>
+    // search frontend
+    document.getElementById('search').addEventListener('input', function(e) {  
+        var searchQuery = e.target.value;  
+    
+        fetch('/search?query=' + searchQuery)  
+            .then(response => response.json())  
+            .then(data => {  
+                // Clear the table  
+                var table = document.querySelector('tbody');  
+                table.innerHTML = '';  
+    
+                // Add new rows to the table  
+                data.forEach(item => {  
+                    var row = document.createElement('tr');  
+                    
+                    // Add each item property as a new cell  
+                    for (var i = 0; i < 7; i++) {  
+                        var cell = document.createElement('td');  
+                        cell.textContent = item[i];  
+                        row.appendChild(cell);  
+                    }  
+    
+                    table.appendChild(row);  
+                });  
+            });  
+    });  
+
+    
+</script>
+
+</body>  
+</html>
